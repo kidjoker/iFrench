@@ -10,15 +10,25 @@ import SwiftUI
 // Import local modules
 import Foundation
 
+/// Main content view after authentication
 struct ContentView: View {
-    @StateObject private var settings = AppSettings()
+    @EnvironmentObject private var authService: AuthService
+    @ObservedObject var settings: AppSettings
     
     var body: some View {
-        // Using NavigationStack instead of NavigationView which is deprecated
-        NavigationStack {
+        NavigationView {
             DashboardView(settings: settings)
         }
-        .preferredColorScheme(settings.isDarkMode ? .dark : .light)
-        .dynamicTypeSize(settings.textSize.dynamicTypeSize)
+        .environmentObject(authService)
+    }
+}
+
+/// Home view content
+// Remove everything from here to the end of file
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView(settings: AppSettings())
+            .environmentObject(AuthService.shared)
     }
 } 

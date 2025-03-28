@@ -1,0 +1,41 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 圆角背景 -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="white" stroke="#152238" stroke-width="32"/>
+  
+  <!-- 法国国旗背景 -->
+  <path d="M160 264C160 215.2 199.2 176 248 176H776C824.8 176 864 215.2 864 264V760C864 808.8 824.8 848 776 848H248C199.2 848 160 808.8 160 760V264Z" fill="#152238" stroke="#152238" stroke-width="16"/>
+  <path d="M192 280C192 246.8 218.8 220 252 220H392V804H252C218.8 804 192 777.2 192 744V280Z" fill="#2D9CDB"/>
+  <path d="M392 220H632V804H392V220Z" fill="white"/>
+  <path d="M632 220H772C805.2 220 832 246.8 832 280V744C832 777.2 805.2 804 772 804H632V220Z" fill="#EB5757"/>
+  
+  <!-- 埃菲尔铁塔 -->
+  <path d="M512 240L532 300H492L512 240Z" fill="#152238"/>
+  <path d="M492 300H532L572 460H452L492 300Z" fill="#152238"/>
+  <path d="M452 460H572L592 520H432L452 460Z" fill="#152238"/>
+  <path d="M432 520H592L612 580H412L432 520Z" fill="#152238"/>
+  <rect x="472" y="580" width="80" height="100" fill="#152238"/>
+  <path d="M412 580H612" stroke="#152238" stroke-width="16"/>
+  
+  <!-- 对话框底部 -->
+  <path d="M292 700C292 660.2 324.2 628 364 628H660C699.8 628 732 660.2 732 700V800C732 817.6 717.6 832 700 832H364C324.2 832 292 799.8 292 768V700Z" fill="white" stroke="#152238" stroke-width="16"/>
+  <path d="M552 832L512 880L472 832" fill="white" stroke="#152238" stroke-width="16"/>
+  
+  <!-- 打开的书 -->
+  <path d="M392 760C392 731.4 415.4 708 444 708H512V780H444C415.4 780 392 756.6 392 728V760Z" fill="white" stroke="#152238" stroke-width="8"/>
+  <path d="M632 760C632 731.4 608.6 708 580 708H512V780H580C608.6 780 632 756.6 632 728V760Z" fill="white" stroke="#152238" stroke-width="8"/>
+  <line x1="512" y1="708" x2="512" y2="780" stroke="#152238" stroke-width="8"/>
+  
+  <!-- 法语对话气泡 -->
+  <circle cx="692" cy="360" r="80" fill="white" stroke="#152238" stroke-width="16"/>
+  <circle cx="692" cy="360" r="48" fill="white"/>
+  <rect x="660" y="344" width="20" height="32" fill="#2D9CDB"/>
+  <rect x="680" y="344" width="24" height="32" fill="white"/>
+  <rect x="704" y="344" width="20" height="32" fill="#EB5757"/>
+  
+  <!-- 装饰点 -->
+  <circle cx="292" cy="340" r="12" fill="white"/>
+  <circle cx="292" cy="400" r="12" fill="white"/>
+  <circle cx="772" cy="440" r="8" fill="white"/>
+  <circle cx="752" cy="460" r="8" fill="white"/>
+  <circle cx="732" cy="480" r="8" fill="white"/>
+</svg> 

@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct ListeningPracticeView: View {
-    // Sample audio exercises
-    private let exercises = [
-        "Exercise 1: Basic Greetings",
-        "Exercise 2: Numbers and Counting",
-        "Exercise 3: Daily Conversations",
-        "Exercise 4: Common Phrases",
-        "Exercise 5: Advanced Dialogue"
+    // Mock data for listening exercises
+    let exercises = [
+        "初级对话 1: 问候与自我介绍",
+        "初级对话 2: 咖啡馆点餐",
+        "初级对话 3: 购物对话",
+        "中级对话 1: 预订酒店",
+        "中级对话 2: 讨论天气",
+        "高级对话 1: 法国文化讨论"
     ]
     
     @State private var selectedExercise: String?
@@ -22,25 +23,31 @@ struct ListeningPracticeView: View {
     
     var body: some View {
         VStack {
-            // Exercise selection
-            List(exercises, id: \.self) { exercise in
-                HStack {
-                    Text(exercise)
-                        .font(.headline)
+            // List of exercises
+            List {
+                ForEach(exercises, id: \.self) { exercise in
+                    HStack {
+                        Text(exercise)
+                            .font(.body)
                     
-                    Spacer()
+                        Spacer()
                     
-                    Image(systemName: selectedExercise == exercise ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(selectedExercise == exercise ? .blue : .gray)
+                        Image(systemName: selectedExercise == exercise ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(selectedExercise == exercise ? .blue : .gray)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedExercise = exercise
+                        isPlaying = false
+                    }
+                    .padding(.vertical, 8)
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    selectedExercise = exercise
-                    isPlaying = false
-                }
-                .padding(.vertical, 8)
             }
+            #if os(iOS) || os(visionOS)
             .listStyle(InsetGroupedListStyle())
+            #else
+            .listStyle(DefaultListStyle())
+            #endif
             
             // Audio player controls (mock)
             if let selectedExercise = selectedExercise {

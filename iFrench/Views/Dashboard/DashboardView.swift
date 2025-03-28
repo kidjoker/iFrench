@@ -14,7 +14,7 @@ struct DashboardView: View {
         ScrollView {
             VStack(spacing: 20) {
                 // 欢迎消息和吉祥物
-                MascotGreetingView(settings: settings)
+                MascotGreetingView(selectedMascot: $settings.selectedMascot)
                     .padding(.horizontal)
                 
                 // 学习统计卡片
@@ -63,12 +63,21 @@ struct DashboardView: View {
         }
         .navigationTitle("iFrench")
         .toolbar {
+            #if os(iOS) || os(visionOS)
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: ProfileView(settings: settings)) {
                     Image(systemName: "person.circle")
                         .font(.title2)
                 }
             }
+            #else
+            ToolbarItem(placement: .automatic) {
+                NavigationLink(destination: ProfileView(settings: settings)) {
+                    Image(systemName: "person.circle")
+                        .font(.title2)
+                }
+            }
+            #endif
         }
     }
 } 

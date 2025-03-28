@@ -8,45 +8,78 @@
 import SwiftUI
 
 struct LearningTipsCard: View {
+    // Sample tips - in a real app, these would be dynamically generated
+    let tips = [
+        "根据你的学习进度，建议每天复习10个单词",
+        "尝试用法语思考日常活动，提高语言应用能力",
+        "听法语歌曲是提高听力的好方法"
+    ]
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            // 标题
-            Text("学习建议")
-                .font(.headline)
-            
-            // 提示列表
-            VStack(alignment: .leading, spacing: 10) {
-                TipRow(icon: "ear.fill", color: .blue, text: "每天听10分钟的法语音频，提高听力理解能力")
-                TipRow(icon: "mouth.fill", color: .red, text: "练习发音时，注意嘴型和舌位，多次重复")
-                TipRow(icon: "book.fill", color: .green, text: "使用间隔复习法学习词汇，效果更好")
-                TipRow(icon: "speaker.wave.2.fill", color: .purple, text: "尝试跟读法语对话，提高口语流利度")
+            // Header
+            HStack {
+                Text("学习建议")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Image(systemName: "lightbulb.fill")
+                    .foregroundColor(.yellow)
             }
+            
+            // Divider
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(Color.gray.opacity(0.2))
+            
+            // Tips list
+            ForEach(tips, id: \.self) { tip in
+                HStack(alignment: .top, spacing: 12) {
+                    // Bullet point
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 18))
+                        .padding(.top, 2)
+                    
+                    // Tip text
+                    Text(tip)
+                        .font(.subheadline)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.vertical, 4)
+            }
+            
+            // More tips button
+            Button(action: {
+                // Action to show more tips
+            }) {
+                HStack {
+                    Text("查看更多建议")
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                }
+            }
+            .padding(.top, 5)
         }
         .padding()
-        .background(Color.white)
+        #if os(iOS) || os(visionOS)
+        .background(Color(UIColor.systemBackground))
+        #else
+        .background(Color(.windowBackgroundColor))
+        #endif
         .cornerRadius(15)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
 
-struct TipRow: View {
-    let icon: String
-    let color: Color
-    let text: String
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 15) {
-            // 图标
-            Image(systemName: icon)
-                .foregroundColor(color)
-                .frame(width: 20)
-            
-            // 文本
-            Text(text)
-                .font(.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Spacer()
-        }
-    }
+#Preview {
+    LearningTipsCard()
+        .padding()
+        .background(Color.gray.opacity(0.1))
 } 

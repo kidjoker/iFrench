@@ -15,97 +15,117 @@ struct LearningStatsCard: View {
     let weeklyGoalProgress = 0.7
     
     var body: some View {
-        VStack(spacing: 15) {
+        VStack(alignment: .leading, spacing: 15) {
             // Header
             HStack {
                 Text("学习统计")
-                    .font(.headline)
-                    .foregroundColor(.primary)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
                 Spacer()
+                
                 Text("本周")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
             }
             
-            // Statistics Grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 20) {
-                StatItem(
+            // Statistics section - horizontal layout matching screenshot
+            HStack(spacing: 0) {
+                // Days studied
+                StatItemView(
                     value: "\(daysStudied)",
                     label: "天数",
                     icon: "calendar",
                     color: .blue,
                     trend: "+2"
                 )
-                StatItem(
+                
+                Spacer()
+                
+                // Minutes spent
+                StatItemView(
                     value: "\(timeSpent)",
                     label: "分钟",
-                    icon: "clock.fill",
+                    icon: "clock",
                     color: .orange,
                     trend: "+30"
                 )
-                StatItem(
+                
+                Spacer()
+                
+                // Words learned
+                StatItemView(
                     value: "\(wordsLearned)",
                     label: "单词",
-                    icon: "book.fill",
+                    icon: "book",
                     color: .green,
                     trend: "+15"
                 )
             }
+            .padding(.vertical, 5)
             
             // Weekly Progress
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("本周目标完成度")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
                     Spacer()
+                    
                     Text("\(Int(weeklyGoalProgress * 100))%")
-                        .font(.caption)
+                        .font(.subheadline)
+                        .fontWeight(.bold)
                         .foregroundColor(.blue)
                 }
                 
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         // Background
-                        RoundedRectangle(cornerRadius: 3)
-                            .frame(width: geometry.size.width, height: 6)
-                            .foregroundColor(.blue.opacity(0.1))
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.blue.opacity(0.2))
+                            .frame(height: 10)
                         
                         // Progress
-                        RoundedRectangle(cornerRadius: 3)
-                            .frame(width: geometry.size.width * weeklyGoalProgress, height: 6)
-                            .foregroundColor(.blue)
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(Color.blue)
+                            .frame(width: geometry.size.width * weeklyGoalProgress, height: 10)
                     }
                 }
-                .frame(height: 6)
+                .frame(height: 10)
             }
             
             // Last Updated and View Details Button
             HStack {
-                Text("最后更新：今天 14:30")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+                Text("最后更新: 今天 14:30")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
                 Spacer()
-                NavigationLink(destination: DetailedStatsView()) {
+                
+                Button(action: {
+                    // Action to view detailed statistics
+                }) {
                     Text("查看详细统计")
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundColor(.blue)
                 }
             }
             .padding(.top, 5)
         }
         .padding()
-        .background(Color.white)
+        #if os(iOS) || os(visionOS)
+        .background(Color(UIColor.systemBackground))
+        #else
+        .background(Color(.windowBackgroundColor))
+        #endif
         .cornerRadius(15)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
 
-struct StatItem: View {
+// Renamed to avoid conflicts with any existing StatItem
+struct StatItemView: View {
     let value: String
     let label: String
     let icon: String
@@ -118,38 +138,34 @@ struct StatItem: View {
             ZStack {
                 Circle()
                     .fill(color.opacity(0.2))
-                    .frame(width: 50, height: 50)
+                    .frame(width: 60, height: 60)
+                
                 Image(systemName: icon)
+                    .font(.title2)
                     .foregroundColor(color)
-                    .font(.system(size: 20))
             }
             
-            // Value and Trend
-            HStack(alignment: .top, spacing: 4) {
+            // Value with increase indicator
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(value)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
+                
                 Text(trend)
-                    .font(.caption2)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Color.green.opacity(0.1))
+                    .font(.caption)
                     .foregroundColor(.green)
-                    .cornerRadius(4)
             }
             
             // Label
             Text(label)
-                .font(.caption)
-                .foregroundColor(.gray)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
         }
+        .frame(width: 100)
     }
 }
 
 #Preview {
-    NavigationView {
-        LearningStatsCard()
-            .padding()
-            .background(Color.gray.opacity(0.1))
-    }
+    LearningStatsCard()
+        .padding()
+        .background(Color.gray.opacity(0.1))
 } 

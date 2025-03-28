@@ -8,17 +8,22 @@
 import SwiftUI
 
 struct MascotGreetingView: View {
-    @ObservedObject var settings: AppSettings
+    @Binding var selectedMascot: Mascot
     
     var body: some View {
         HStack(spacing: 15) {
-            // 吉祥物图像 - Using system image as a fallback instead of a custom image that might not exist
-            Circle()
-                .fill(Color.blue.opacity(0.2))
-                .frame(width: 70, height: 70)
-                .overlay(
-                    getMascotImage()
-                )
+            // Mascot Avatar
+            ZStack {
+                Circle()
+                    .fill(selectedMascot.color.opacity(0.2))
+                    .frame(width: 70, height: 70)
+                
+                getMascotImage()
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .foregroundColor(selectedMascot.color)
+            }
             
             // 欢迎信息
             VStack(alignment: .leading, spacing: 5) {
@@ -26,42 +31,54 @@ struct MascotGreetingView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                Text("今天是学习法语的好日子！")
+                Text(getDailyMessage())
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer()
         }
         .padding()
-        .background(Color.white)
+        #if os(iOS) || os(visionOS)
+        .background(Color(UIColor.systemBackground))
+        #else
+        .background(Color(.windowBackgroundColor))
+        #endif
         .cornerRadius(15)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
     
-    // Get the appropriate mascot image
-    @ViewBuilder
-    private func getMascotImage() -> some View {
-        // Using system images as fallbacks since we may not have the actual mascot images
-        switch settings.selectedMascot {
+    // Get appropriate mascot image
+    private func getMascotImage() -> Image {
+        switch selectedMascot {
         case .frog:
-            Image(systemName: "tortoise.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
-                .foregroundColor(.green)
+            return Image(systemName: "tortoise.fill")
         case .owl:
-            Image(systemName: "owl")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
-                .foregroundColor(.brown)
+            return Image(systemName: "owl")
         case .fox:
-            Image(systemName: "hare.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40, height: 40)
-                .foregroundColor(.orange)
+            return Image(systemName: "hare.fill")
         }
     }
+    
+    // Get a random daily message
+    private func getDailyMessage() -> String {
+        let messages = [
+            "今天准备好学习新的法语单词了吗？",
+            "继续保持学习热情，你已经进步很多了！",
+            "今天是继续提高法语能力的好时机！",
+            "每天坚持学习一点，积少成多！",
+            "你离精通法语又近了一步！"
+        ]
+        
+        // In a real app, this would be deterministic based on the day
+        // For demo purposes, we'll just pick a random one
+        return messages.randomElement() ?? messages[0]
+    }
+}
+
+#Preview {
+    MascotGreetingView(selectedMascot: .constant(.frog))
+        .padding()
+        .background(Color.gray.opacity(0.1))
 } 

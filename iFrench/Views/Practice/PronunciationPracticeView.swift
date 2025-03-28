@@ -265,7 +265,9 @@ struct PronunciationPracticeView: View {
             Spacer()
         }
         .navigationTitle("发音练习")
+        #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .padding(.vertical)
     }
     
