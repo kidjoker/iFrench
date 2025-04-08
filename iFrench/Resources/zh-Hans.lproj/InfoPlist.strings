@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  iFrench
+*/
+
+// 语音识别权限描述
+"NSSpeechRecognitionUsageDescription" = "我们需要语音识别权限来转录和分析法语音频内容，从而生成相关问题。";
+
+// 麦克风权限描述
+"NSMicrophoneUsageDescription" = "我们需要麦克风权限来记录您的法语发音，以便进行评估和改进建议。"; 

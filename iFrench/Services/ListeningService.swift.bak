@@ -1,0 +1,535 @@
+import Foundation
+import AVFoundation
+import Combine
+
+/// 听力练习服务类，负责管理听力练习的业务逻辑
+class ListeningService: ObservableObject {
+    /// 单例实例
+    static let shared = ListeningService()
+    
+    // MARK: - Published Properties
+    
+    /// 当前可用的听力练习列表
+    @Published private(set) var exercises: [ListeningExercise] = []
+    
+    /// 当前选中的练习
+    @Published private(set) var currentExercise: ListeningExercise?
+    
+    /// 音频播放器状态
+    @Published private(set) var isPlaying = false
+    
+    /// 音频播放进度（0-1）
+    @Published private(set) var progress: Double = 0
+    
+    /// 当前音频时间
+    @Published private(set) var currentTime: TimeInterval = 0
+    
+    /// 加载状态
+    @Published private(set) var isLoading = false
+    
+    /// 错误信息
+    @Published private(set) var error: Error?
+    
+    // MARK: - Private Properties
+    
+    // 重命名以避免冲突
+    private var avPlayer: AVAudioPlayer?
+    private var progressTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
+    
+    /// 音频文件目录
+    private let audioDirectory: URL
+    
+    // MARK: - Initialization
+    
+    private init() {
+        // 创建音频文件目录
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        audioDirectory = documentsDirectory.appendingPathComponent("AudioFiles", isDirectory: true)
+        
+        // 确保音频目录存在
+        do {
+            if !FileManager.default.fileExists(atPath: audioDirectory.path) {
+                try FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
+            }
+        } catch {
+            print("创建音频目录失败：\(error)")
+        }
+        
+        setupAudioSession()
+        #if DEBUG
+        loadMockExercises()
+        #else
+        loadExercises()
+        #endif
+        
+        // 确保示例音频文件已复制到音频目录
+        copyBundleAudioFilesToDirectory()
+    }
+    
+    /// 复制Bundle中的音频文件到音频目录
+    private func copyBundleAudioFilesToDirectory() {
+        let fileManager = FileManager.default
+        let bundleAudioFiles = ["dialogue_1.mp3", "cafe_order.mp3"]
+        
+        for fileName in bundleAudioFiles {
+            // 检查文件是否已存在于音频目录
+            let destinationURL = audioDirectory.appendingPathComponent(fileName)
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                print("音频文件已存在：\(fileName)")
+                continue
+            }
+            
+            // 从Bundle中获取文件
+            guard let bundleURL = Bundle.main.url(forResource: fileName.replacingOccurrences(of: ".mp3", with: ""), 
+                                                 withExtension: "mp3") else {
+                print("Bundle中找不到音频文件：\(fileName)")
+                continue
+            }
+            
+            do {
+                // 复制文件
+                try fileManager.copyItem(at: bundleURL, to: destinationURL)
+                print("成功复制音频文件到音频目录：\(fileName)")
+            } catch {
+                print("复制音频文件失败：\(error)")
+            }
+        }
+        
+        // 列出音频目录中的所有文件
+        do {
+            let files = try fileManager.contentsOfDirectory(at: audioDirectory, includingPropertiesForKeys: nil)
+            print("音频目录中的文件：")
+            for file in files {
+                print("- \(file.lastPathComponent)")
+            }
+        } catch {
+            print("无法列出音频目录中的文件：\(error)")
+        }
+    }
+    
+    // MARK: - Public Methods
+    
+    /// 加载听力练习列表
+    func loadExercises() {
+        isLoading = true
+        // TODO: 实现从服务器或本地存储加载练习列表
+        isLoading = false
+    }
+    
+    /// 导入音频文件
+    func importAudio(from url: URL) {
+        isLoading = true
+        print("开始导入音频文件：\(url.lastPathComponent)")
+        print("源文件路径：\(url.path)")
+        
+        // 打印音频目录内容
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(at: audioDirectory, includingPropertiesForKeys: nil)
+            print("当前音频目录内容：")
+            for file in contents {
+                print("- \(file.lastPathComponent)")
+            }
+        } catch {
+            print("读取音频目录失败：\(error)")
+        }
+        
+        do {
+            // 检查文件格式
+            let supportedExtensions = ["mp3", "wav", "m4a", "aac", "mp4", "caf"]
+            let fileExtension = url.pathExtension.lowercased()
+            print("文件格式：\(fileExtension)")
+            
+            guard supportedExtensions.contains(fileExtension) else {
+                throw ListeningError.importError(NSError(domain: "ListeningService",
+                                                       code: -1,
+                                                       userInfo: [NSLocalizedDescriptionKey: "不支持的音频格式：\(fileExtension)。支持的格式：MP3, WAV, M4A, AAC, MP4, CAF"]))
+            }
+            
+            // 创建一个新的练习
+            let fileName = UUID().uuidString + "." + fileExtension // 使用唯一文件名
+            print("将使用文件名：\(fileName)")
+            
+            // 直接从源URL创建播放器进行验证
+            print("正在验证音频文件...")
+            do {
+                let tempPlayer = try AVAudioPlayer(contentsOf: url)
+                print("音频时长：\(tempPlayer.duration)秒")
+                
+                // 将音频文件复制到音频目录
+                let savedURL = audioDirectory.appendingPathComponent(fileName)
+                print("正在保存到：\(savedURL.path)")
+                
+                if FileManager.default.fileExists(atPath: savedURL.path) {
+                    try FileManager.default.removeItem(at: savedURL)
+                    print("删除已存在的文件")
+                }
+                
+                try FileManager.default.copyItem(at: url, to: savedURL)
+                print("文件复制完成")
+                
+                // 验证文件是否成功保存
+                if FileManager.default.fileExists(atPath: savedURL.path) {
+                    print("文件成功保存到目标位置")
+                    let fileSize = try FileManager.default.attributesOfItem(atPath: savedURL.path)[.size] as? UInt64
+                    print("保存的文件大小：\(fileSize ?? 0) bytes")
+                } else {
+                    print("警告：文件似乎未成功保存")
+                }
+                
+                // 创建新的练习
+                let newExercise = ListeningExercise(
+                    title: url.deletingPathExtension().lastPathComponent,
+                    audioFileName: fileName,
+                    audioLength: tempPlayer.duration,
+                    transcript: "请添加原文",
+                    question: "请添加问题",
+                    options: ["选项1", "选项2", "选项3", "选项4"],
+                    correctOptionIndex: 0,
+                    difficulty: .beginner,
+                    type: .extensive
+                )
+                
+                print("添加新练习：\(newExercise.title)")
+                exercises.append(newExercise)
+                
+                // 自动选择新导入的练习
+                print("选择新练习...")
+                selectExercise(newExercise)
+                print("导入完成！")
+                
+                // 再次打印音频目录内容
+                let updatedContents = try FileManager.default.contentsOfDirectory(at: audioDirectory, includingPropertiesForKeys: nil)
+                print("更新后的音频目录内容：")
+                for file in updatedContents {
+                    print("- \(file.lastPathComponent)")
+                }
+                
+            } catch {
+                print("音频初始化失败：\(error.localizedDescription)")
+                throw ListeningError.importError(NSError(domain: "ListeningService",
+                                                       code: -2,
+                                                       userInfo: [NSLocalizedDescriptionKey: "无效的音频文件或格式不支持：\(error.localizedDescription)"]))
+            }
+            
+        } catch {
+            if let listeningError = error as? ListeningError {
+                self.error = listeningError
+            } else {
+                self.error = ListeningError.importError(error)
+            }
+            print("导入失败：\(error.localizedDescription)")
+        }
+        
+        isLoading = false
+    }
+    
+    /// 选择练习
+    func selectExercise(_ exercise: ListeningExercise?) {
+        if exercise == nil {
+            // 停止当前播放
+            pause()
+            avPlayer = nil
+            progressTimer?.invalidate()
+            progressTimer = nil
+            progress = 0
+            currentTime = 0
+        }
+        currentExercise = exercise
+        if exercise != nil {
+            prepareAudio()
+        }
+    }
+    
+    /// 播放音频
+    func play() {
+        guard let player = avPlayer else { return }
+        player.play()
+        isPlaying = true
+        startProgressTimer()
+    }
+    
+    /// 暂停音频
+    func pause() {
+        avPlayer?.pause()
+        isPlaying = false
+        stopProgressTimer()
+    }
+    
+    /// 重新开始
+    func restart() {
+        avPlayer?.currentTime = 0
+        currentTime = 0
+        progress = 0
+        play()
+    }
+    
+    /// 快进
+    func forward(_ seconds: TimeInterval = 5) {
+        guard let player = avPlayer else { return }
+        let newTime = min(player.duration, player.currentTime + seconds)
+        player.currentTime = newTime
+        updateProgress()
+    }
+    
+    /// 快退
+    func backward(_ seconds: TimeInterval = 5) {
+        guard let player = avPlayer else { return }
+        let newTime = max(0, player.currentTime - seconds)
+        player.currentTime = newTime
+        updateProgress()
+    }
+    
+    /// 提交答案
+    func submitAnswer(_ index: Int) {
+        guard var exercise = currentExercise else { return }
+        exercise.userSelected = index
+        
+        // 更新练习状态
+        if let exerciseIndex = exercises.firstIndex(where: { $0.id == exercise.id }) {
+            exercises[exerciseIndex] = exercise
+        }
+        currentExercise = exercise
+        
+        // 如果答对了，更新学习统计
+        if index == exercise.correctOptionIndex {
+            updateLearningStats(exercise)
+        }
+    }
+    
+    /// 标记时间戳
+    func markTimestamp() {
+        guard var exercise = currentExercise,
+              let player = avPlayer else { return }
+        
+        let timestamp = player.currentTime
+        exercise.markedTimestamps.append(timestamp)
+        
+        // 更新练习状态
+        if let exerciseIndex = exercises.firstIndex(where: { $0.id == exercise.id }) {
+            exercises[exerciseIndex] = exercise
+        }
+        currentExercise = exercise
+    }
+    
+    /// 从URL下载音频
+    func downloadAudio(from urlString: String, title: String? = nil) {
+        guard let url = URL(string: urlString) else {
+            self.error = ListeningError.importError(NSError(domain: "ListeningService",
+                                                         code: -3,
+                                                         userInfo: [NSLocalizedDescriptionKey: "无效的URL"]))
+            return
+        }
+        
+        isLoading = true
+        print("开始从URL下载音频：\(url.absoluteString)")
+        
+        let fileName = UUID().uuidString + "." + (url.pathExtension.isEmpty ? "mp3" : url.pathExtension)
+        let destinationURL = audioDirectory.appendingPathComponent(fileName)
+        
+        let downloadTask = URLSession.shared.downloadTask(with: url) { tempFileURL, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.error = ListeningError.importError(error)
+                    self.isLoading = false
+                    print("下载失败：\(error.localizedDescription)")
+                    return
+                }
+                
+                guard let tempFileURL = tempFileURL else {
+                    self.error = ListeningError.importError(NSError(domain: "ListeningService",
+                                                             code: -4,
+                                                             userInfo: [NSLocalizedDescriptionKey: "下载文件不存在"]))
+                    self.isLoading = false
+                    return
+                }
+                
+                do {
+                    // 如果目标文件已存在，先删除
+                    if FileManager.default.fileExists(atPath: destinationURL.path) {
+                        try FileManager.default.removeItem(at: destinationURL)
+                    }
+                    
+                    // 移动临时文件到目标位置
+                    try FileManager.default.moveItem(at: tempFileURL, to: destinationURL)
+                    print("文件下载完成：\(destinationURL.path)")
+                    
+                    // 确认文件存在
+                    guard FileManager.default.fileExists(atPath: destinationURL.path) else {
+                        throw NSError(domain: "ListeningService", code: -5, userInfo: [NSLocalizedDescriptionKey: "文件移动后不存在"])
+                    }
+                    
+                    // 获取音频时长
+                    do {
+                        let tempAudioPlayer = try AVAudioPlayer(contentsOf: destinationURL)
+                        
+                        // 创建新的练习
+                        let displayTitle = title ?? url.deletingPathExtension().lastPathComponent
+                        let newExercise = ListeningExercise(
+                            title: displayTitle,
+                            audioFileName: fileName,
+                            audioLength: tempAudioPlayer.duration,
+                            transcript: "请添加原文",
+                            question: "请添加问题",
+                            options: ["选项1", "选项2", "选项3", "选项4"],
+                            correctOptionIndex: 0,
+                            difficulty: .beginner,
+                            type: .extensive
+                        )
+                        
+                        print("创建新练习：\(newExercise.title), 时长：\(tempAudioPlayer.duration)秒")
+                        self.exercises.append(newExercise)
+                        self.selectExercise(newExercise)
+                        
+                    } catch {
+                        self.error = ListeningError.playbackError(error)
+                        print("无法获取音频时长：\(error)")
+                    }
+                    
+                } catch {
+                    self.error = ListeningError.importError(error)
+                    print("保存下载文件失败：\(error)")
+                }
+                
+                self.isLoading = false
+            }
+        }
+        
+        downloadTask.resume()
+    }
+    
+    /// 设置播放位置
+    func seekToPosition(_ progress: Double) {
+        guard let player = avPlayer,
+              let duration = currentExercise?.audioLength else { return }
+        
+        let newTime = duration * progress
+        player.currentTime = newTime
+        currentTime = newTime
+        self.progress = progress
+        updateProgress()
+    }
+    
+    // MARK: - Private Methods
+    
+    private func setupAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to setup audio session: \(error)")
+        }
+    }
+    
+    private func loadMockExercises() {
+        exercises = MockData.listeningExercises
+    }
+    
+    private func prepareAudio() {
+        guard let exercise = currentExercise else { return }
+        print("准备加载音频：\(exercise.audioFileName)")
+        
+        // 处理相对路径
+        let audioFileName = exercise.audioFileName.components(separatedBy: "/").last ?? exercise.audioFileName
+        print("处理后的文件名：\(audioFileName)")
+        
+        // 首先尝试从音频目录加载
+        let audioURL = audioDirectory.appendingPathComponent(audioFileName)
+        print("尝试从音频目录加载：\(audioURL.path)")
+        
+        if FileManager.default.fileExists(atPath: audioURL.path) {
+            print("在音频目录中找到文件")
+            do {
+                avPlayer = try AVAudioPlayer(contentsOf: audioURL)
+                avPlayer?.prepareToPlay()
+                progress = 0
+                currentTime = 0
+                print("成功加载音频文件")
+                return
+            } catch {
+                self.error = ListeningError.playbackError(error)
+                print("从音频目录加载失败：\(error)")
+            }
+        }
+        
+        // 如果是示例音频，尝试从 Bundle 加载
+        print("尝试从 Bundle 加载")
+        let components = audioFileName.split(separator: ".")
+        let baseName = String(components.first ?? "")
+        let ext = components.count > 1 ? String(components.last!) : "mp3"
+        
+        if let bundleURL = Bundle.main.url(forResource: baseName, withExtension: ext) {
+            print("在 Bundle 中找到文件：\(baseName).\(ext)")
+            do {
+                avPlayer = try AVAudioPlayer(contentsOf: bundleURL)
+                avPlayer?.prepareToPlay()
+                progress = 0
+                currentTime = 0
+                print("成功从 Bundle 加载音频")
+            } catch {
+                self.error = ListeningError.playbackError(error)
+                print("从 Bundle 加载失败：\(error)")
+            }
+        } else {
+            print("音频文件未找到：\(exercise.audioFileName)")
+            print("已检查的位置：")
+            print("1. 音频目录：\(audioURL.path)")
+            print("2. Bundle：\(baseName).\(ext)")
+            self.error = ListeningError.audioNotFound
+        }
+    }
+    
+    private func startProgressTimer() {
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.updateProgress()
+        }
+    }
+    
+    private func stopProgressTimer() {
+        progressTimer?.invalidate()
+        progressTimer = nil
+    }
+    
+    private func updateProgress() {
+        guard let player = avPlayer else { return }
+        progress = player.currentTime / player.duration
+        currentTime = player.currentTime
+        
+        if player.currentTime >= player.duration {
+            pause()
+        }
+    }
+    
+    private func updateLearningStats(_ exercise: ListeningExercise) {
+        let stats = LearningStats(
+            duration: exercise.audioLength,
+            topic: .listening,
+            completedItems: 1,
+            accuracy: exercise.userSelected == exercise.correctOptionIndex ? 1.0 : 0.0
+        )
+        StatsService.shared.addLearningStats(stats)
+    }
+}
+
+// MARK: - Error Types
+extension ListeningService {
+    enum ListeningError: LocalizedError {
+        case audioNotFound
+        case playbackError(Error)
+        case invalidExercise
+        case importError(Error)
+        
+        var errorDescription: String? {
+            switch self {
+            case .audioNotFound:
+                return "找不到音频文件"
+            case .playbackError(let error):
+                return "播放错误：\(error.localizedDescription)"
+            case .invalidExercise:
+                return "无效的练习"
+            case .importError(let error):
+                return "导入错误：\(error.localizedDescription)"
+            }
+        }
+    }
+} 

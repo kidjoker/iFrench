@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  iFrench
+*/
+
+// Speech Recognition permission description
+"NSSpeechRecognitionUsageDescription" = "We need speech recognition permission to transcribe and analyze French audio content to generate relevant questions.";
+
+// Microphone permission description
+"NSMicrophoneUsageDescription" = "We need microphone permission to record your French pronunciation for evaluation and improvement suggestions."; 

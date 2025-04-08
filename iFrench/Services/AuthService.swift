@@ -73,8 +73,8 @@ public class AuthService: ObservableObject {
                 email: email,
                 lastLoginDate: Date(),
                 streak: Int.random(in: 1...10),
-                totalStudyTimeMinutes: Int.random(in: 60...180),
-                wordsLearned: Int.random(in: 30...60)
+                totalDuration: TimeInterval(Int.random(in: 3600...10800)), // 1-3 hours in seconds
+                masteredWords: Int.random(in: 30...60)
             )
             
             self.currentUser = user

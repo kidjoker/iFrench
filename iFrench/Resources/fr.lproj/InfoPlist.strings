@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  iFrench
+*/
+
+// Description d'autorisation de reconnaissance vocale
+"NSSpeechRecognitionUsageDescription" = "Nous avons besoin de l'autorisation de reconnaissance vocale pour transcrire et analyser le contenu audio français afin de générer des questions pertinentes.";
+
+// Description d'autorisation du microphone
+"NSMicrophoneUsageDescription" = "Nous avons besoin de l'autorisation du microphone pour enregistrer votre prononciation française à des fins d'évaluation et de suggestions d'amélioration."; 
